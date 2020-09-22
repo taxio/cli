@@ -27,6 +27,7 @@ type ListOptions struct {
 	BaseBranch   string
 	Labels       []string
 	Assignee     string
+	CommitHash   string
 }
 
 func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Command {
@@ -66,6 +67,7 @@ func NewCmdList(f *cmdutil.Factory, runF func(*ListOptions) error) *cobra.Comman
 	cmd.Flags().StringVarP(&opts.BaseBranch, "base", "B", "", "Filter by base branch")
 	cmd.Flags().StringSliceVarP(&opts.Labels, "label", "l", nil, "Filter by labels")
 	cmd.Flags().StringVarP(&opts.Assignee, "assignee", "a", "", "Filter by assignee")
+	cmd.Flags().StringVarP(&opts.CommitHash, "commit", "C", "", "Filter by related commit hash")
 
 	return cmd
 }
@@ -126,6 +128,9 @@ func listRun(opts *ListOptions) error {
 	}
 	if opts.Assignee != "" {
 		params["assignee"] = opts.Assignee
+	}
+	if opts.CommitHash != "" {
+		params["commitHash"] = opts.CommitHash
 	}
 
 	listResult, err := api.PullRequestList(apiClient, baseRepo, params, opts.LimitResults)

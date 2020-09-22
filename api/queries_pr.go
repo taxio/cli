@@ -885,9 +885,11 @@ func PullRequestList(client *Client, repo ghrepo.Interface, vars map[string]inte
 	variables := map[string]interface{}{}
 	res := PullRequestAndTotalCount{}
 
-	// If assignee was specified, use the `search` API rather than
+	// If assignee or commit hash was specified, use the `search` API rather than
 	// `Repository.pullRequests`, but this mode doesn't support multiple labels
-	if assignee, ok := vars["assignee"].(string); ok {
+	assignee, okAsignee := vars["assignee"].(string)
+	commitHash, okCommitHash := vars["commitHash"].(string)
+	if okAsignee || okCommitHash {
 		query = fragment + `
 		query PullRequestList(
 			$q: String!,
@@ -909,9 +911,11 @@ func PullRequestList(client *Client, repo ghrepo.Interface, vars map[string]inte
 		}`
 		search := []string{
 			fmt.Sprintf("repo:%s/%s", repo.RepoOwner(), repo.RepoName()),
-			fmt.Sprintf("assignee:%s", assignee),
 			"is:pr",
 			"sort:created-desc",
+		}
+		if okAsignee {
+			search = append(search, fmt.Sprintf("assignee:%s", assignee))
 		}
 		if states, ok := vars["state"].([]string); ok && len(states) == 1 {
 			switch states[0] {
@@ -931,6 +935,9 @@ func PullRequestList(client *Client, repo ghrepo.Interface, vars map[string]inte
 		}
 		if baseBranch, ok := vars["baseBranch"].(string); ok {
 			search = append(search, fmt.Sprintf(`base:"%s"`, baseBranch))
+		}
+		if okCommitHash {
+			search = append(search, commitHash)
 		}
 		variables["q"] = strings.Join(search, " ")
 	} else {
